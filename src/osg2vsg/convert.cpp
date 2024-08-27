@@ -12,9 +12,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <osg2vsg/convert.h>
 #include <osg2vsg/OSG.h>
+#include <osgDB/FileNameUtils>
 
 #include "ConvertToVsg.h"
 #include "ImageUtils.h"
+#include <filesystem>
 
 using namespace osg2vsg;
 
@@ -84,7 +86,154 @@ vsg::ref_ptr<vsg::Data> osg2vsg::convert(const osg::Array& src_array, vsg::ref_p
     }
 }
 
-vsg::ref_ptr<vsg::Node> osg2vsg::convert(const osg::Node& node, vsg::ref_ptr<const vsg::Options> options)
+class ProcessTextureVisitor final : public osg::NodeVisitor
+{
+public:
+    ProcessTextureVisitor(std::string in_path = {}) :
+        osg::NodeVisitor(TRAVERSE_ALL_CHILDREN),
+        m_path{ std::move(in_path) }
+    {
+        m_path = m_path.substr(0, m_path.find_last_of('\\'));
+    }
+
+    ProcessTextureVisitor(const ProcessTextureVisitor&) = default;
+    ProcessTextureVisitor(ProcessTextureVisitor&&) = default;
+
+    ProcessTextureVisitor& operator=(const ProcessTextureVisitor&) = default;
+    ProcessTextureVisitor& operator=(ProcessTextureVisitor&&) = default;
+
+    ~ProcessTextureVisitor() = default;
+
+public:
+    void apply(osg::Node& in_node)
+    {
+        processStateSet(in_node.getStateSet());
+        traverse(in_node);
+    }
+
+    void apply(osg::Geode& in_geode)
+    {
+        processStateSet(in_geode.getStateSet());
+
+        for (unsigned int i = 0; i < in_geode.getNumDrawables(); i++)
+        {
+            osg::Drawable* drawable{ in_geode.getDrawable(i) };
+
+            if (drawable)
+                apply(*drawable);
+        }
+    }
+
+    void apply(osg::Drawable& in_drawable)
+    {
+        processStateSet(in_drawable.getStateSet());
+    }
+
+private:
+    std::string m_path;
+
+private:
+    void processStateSet(osg::StateSet* in_stateSet)
+    {
+        if (!in_stateSet)
+            return;
+
+        bool processed{ false };
+        const bool hasProcessedValue{ in_stateSet->getUserValue("processed", processed) };
+        const bool needToProcess{ (hasProcessedValue == false) || (hasProcessedValue == true && processed == false) };
+
+        if (!needToProcess)
+            return;
+
+        in_stateSet->setUserValue("processed", true);
+        std::cout << "Processing state set\n";
+
+        osg::ref_ptr<osgDB::ReaderWriter::Options> options{ new osgDB::ReaderWriter::Options("dds_flip") };
+
+        std::string baseImagePath{ findTextureUnit(0, in_stateSet) };
+
+        if (baseImagePath.empty())
+            return;
+
+        osg::Texture2D* baseTexture{ dynamic_cast<osg::Texture2D*> (in_stateSet->getTextureAttribute(0, osg::StateAttribute::TEXTURE)) };
+        std::string base{ osgDB::getNameLessExtension(baseImagePath) };
+
+        size_t pos = base.rfind("_diffuse");
+
+        if (pos != std::string::npos) {
+            base = base.erase(pos);
+        }
+        else {
+            pos = base.rfind("_Diffuse");
+            if (pos != std::string::npos) {
+                base = base.erase(pos);
+            }
+            else {
+                pos = base.rfind("_DIFFUSE");
+                if (pos != std::string::npos) {
+                    base = base.erase(pos);
+                }
+            }
+        }
+
+        std::string extension{ osgDB::getFileExtension(baseImagePath) };
+
+        auto loadAndSetTexture = [&](const std::string& in_textureType, unsigned int in_unit, const std::string& in_userValue)
+        {
+            std::string imageFileName{ m_path + "\\" + base + in_textureType + extension };
+
+            if (std::filesystem::exists(imageFileName))
+            {
+                osg::ref_ptr<osg::Image> image{ osgDB::readImageFile(imageFileName) };
+
+                if (image->valid())
+                {
+                    osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D;
+                    texture->setWrap(osg::Texture::WRAP_S, baseTexture->getWrap(osg::Texture::WRAP_S));
+                    texture->setWrap(osg::Texture::WRAP_T, baseTexture->getWrap(osg::Texture::WRAP_T));
+                    texture->setWrap(osg::Texture::WRAP_R, baseTexture->getWrap(osg::Texture::WRAP_R));
+                    texture->setFilter(osg::Texture::MIN_FILTER, baseTexture->getFilter(osg::Texture::MIN_FILTER));
+                    texture->setFilter(osg::Texture::MAG_FILTER, baseTexture->getFilter(osg::Texture::MAG_FILTER));
+                    texture->setMaxAnisotropy(baseTexture->getMaxAnisotropy());
+
+                    texture->setImage(image);
+                    in_stateSet->setTextureAttributeAndModes(in_unit, texture);
+
+                    in_stateSet->setUserValue(in_userValue, true);
+
+                    std::cout << "Loaded " << imageFileName << '\n';
+
+                    if (extension == "dds")
+                        in_stateSet->setUserValue("normNeedsFlip", true);
+                }
+            }
+        };
+        
+        loadAndSetTexture("_NML.", NORMAL_TEXTURE_UNIT, "norm");
+        //loadAndSetTexture("_NML.", 1, "norm");
+        //loadAndSetTexture("_AORM.", 3, "aorm");
+        //loadAndSetTexture("_EMISS.", 7, "emiss");
+        //loadAndSetTexture("_HEIGHT.", 9, "height");
+    }
+
+    std::string findTextureUnit(int in_unit, osg::StateSet* in_stateSet)
+    {
+        if (!in_stateSet)
+            return {};
+
+        osg::Texture2D* texture{ dynamic_cast<osg::Texture2D*>(in_stateSet->getTextureAttribute(in_unit, osg::StateAttribute::TEXTURE)) };
+
+        if (!texture)
+            return {};
+
+        osg::Image* image{ texture->getImage(0) };
+
+        return std::string(image ? image->getFileName() : "");
+    }
+
+}; // !class ProcessTextureVisitor
+
+vsg::ref_ptr<vsg::Node> osg2vsg::convert(const osg::Node& node, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filePath)
 {
     bool mapRGBtoRGBAHint = !options || options->mapRGBtoRGBAHint;
     vsg::Paths searchPaths = options ? options->paths : vsg::getEnvPaths("VSG_FILE_PATH");
@@ -113,6 +262,8 @@ vsg::ref_ptr<vsg::Node> osg2vsg::convert(const osg::Node& node, vsg::ref_ptr<con
     buildOptions->pipelineCache = pipelineCache;
 
     auto osg_scene = const_cast<osg::Node*>(&node);
+    ProcessTextureVisitor processTextureVisitor{ filePath.string() };
+    osg_scene->traverse(processTextureVisitor);
 
     if (vsg::value<bool>(false, OSG::original_converter, options))
     {

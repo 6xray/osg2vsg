@@ -220,10 +220,17 @@ namespace osg2vsg
             layout.blockHeight = 4;
             layout.format = VK_FORMAT_BC3_UNORM_BLOCK;
             break;
+        
+        case (GL_COMPRESSED_RED_GREEN_RGTC2_EXT):
+            blockSize = 64;
+            layout.blockWidth = 4;
+            layout.blockHeight = 4;
+            layout.format = VK_FORMAT_BC5_UNORM_BLOCK;
+            break;
+
         case (GL_COMPRESSED_SIGNED_RED_RGTC1_EXT):
         case (GL_COMPRESSED_RED_RGTC1_EXT):
         case (GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT):
-        case (GL_COMPRESSED_RED_GREEN_RGTC2_EXT):
         case (GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG):
         case (GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG):
         case (GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG):

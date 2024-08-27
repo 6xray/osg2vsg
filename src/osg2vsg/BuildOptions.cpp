@@ -13,8 +13,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "BuildOptions.h"
 #include "ShaderUtils.h"
 
-#include "shaders/fbxshader_vert.cpp"
-#include "shaders/fbxshader_frag.cpp"
+#include "shaders/pbr_vert.cpp"
+#include "shaders/pbr_frag.cpp"
 
 using namespace osg2vsg;
 

@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <algorithm>
 #include <iomanip>
+#include <iostream>
 
 using namespace osg2vsg;
 
@@ -27,7 +28,7 @@ uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
         if (stateSet->getMode(GL_LIGHTING) & osg::StateAttribute::ON) stateMask |= LIGHTING;
 
         auto asMaterial = dynamic_cast<const osg::Material*>(stateSet->getAttribute(osg::StateAttribute::Type::MATERIAL));
-        if (asMaterial && stateSet->getMode(GL_COLOR_MATERIAL) == osg::StateAttribute::Values::ON) stateMask |= MATERIAL;
+        if (asMaterial && (stateSet->getMode(GL_COLOR_MATERIAL) & osg::StateAttribute::Values::ON)) stateMask |= MATERIAL;
 
         auto hasTextureWithImageInChannel = [stateSet](unsigned int channel) {
             auto asTex = dynamic_cast<const osg::Texture*>(stateSet->getTextureAttribute(channel, osg::StateAttribute::TEXTURE));
@@ -35,11 +36,24 @@ uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
             return false;
         };
 
-        if (hasTextureWithImageInChannel(DIFFUSE_TEXTURE_UNIT)) stateMask |= DIFFUSE_MAP;
-        if (hasTextureWithImageInChannel(OPACITY_TEXTURE_UNIT)) stateMask |= OPACITY_MAP;
-        if (hasTextureWithImageInChannel(AMBIENT_TEXTURE_UNIT)) stateMask |= AMBIENT_MAP;
-        if (hasTextureWithImageInChannel(NORMAL_TEXTURE_UNIT)) stateMask |= NORMAL_MAP;
-        if (hasTextureWithImageInChannel(SPECULAR_TEXTURE_UNIT)) stateMask |= SPECULAR_MAP;
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            if (hasTextureWithImageInChannel(i))
+                std::cout << "Has texture in channel " << i << '\n';
+        }
+
+        std::cout << '\n';
+
+        if (hasTextureWithImageInChannel(DIFFUSE_TEXTURE_UNIT)) 
+            stateMask |= DIFFUSE_MAP;
+        if (hasTextureWithImageInChannel(OPACITY_TEXTURE_UNIT)) 
+            stateMask |= OPACITY_MAP;
+        if (hasTextureWithImageInChannel(AMBIENT_TEXTURE_UNIT)) 
+            stateMask |= AMBIENT_MAP;
+        if (hasTextureWithImageInChannel(NORMAL_TEXTURE_UNIT)) 
+            stateMask |= NORMAL_MAP;
+        if (hasTextureWithImageInChannel(SPECULAR_TEXTURE_UNIT)) 
+            stateMask |= SPECULAR_MAP;
     }
     return stateMask;
 }

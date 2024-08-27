@@ -157,7 +157,7 @@ vsg::ref_ptr<vsg::Object> OSG::read(const vsg::Path& filename, vsg::ref_ptr<cons
     osg::ref_ptr<osg::Object> object = rr.takeObject();
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
-        return osg2vsg::convert(*osg_scene, options);
+        return osg2vsg::convert(*osg_scene, options, filename);
     }
     else if (osg::Image* osg_image = dynamic_cast<osg::Image*>(object.get()); osg_image != nullptr)
     {
