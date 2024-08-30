@@ -103,6 +103,7 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
     if (shaderModeMask & AMBIENT_MAP) descriptorBindings.push_back({AMBIENT_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     if (shaderModeMask & NORMAL_MAP) descriptorBindings.push_back({NORMAL_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     if (shaderModeMask & SPECULAR_MAP) descriptorBindings.push_back({SPECULAR_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    if (shaderModeMask & AORM_MAP) descriptorBindings.push_back({AORM_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr });
 
     auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
     vsg::DescriptorSetLayouts descriptorSetLayouts{descriptorSetLayout};

@@ -54,6 +54,8 @@ uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
             stateMask |= NORMAL_MAP;
         if (hasTextureWithImageInChannel(SPECULAR_TEXTURE_UNIT)) 
             stateMask |= SPECULAR_MAP;
+        if (hasTextureWithImageInChannel(AORM_TEXTURE_UNIT))
+            stateMask |= AORM_MAP;
     }
     return stateMask;
 }
@@ -66,6 +68,7 @@ std::set<std::string> osg2vsg::createPSCDefineStrings(const uint32_t& shaderMode
     bool hastangent = geometryAttrbutes & TANGENT;
     bool hascolor = geometryAttrbutes & COLOR;
     bool hastex0 = geometryAttrbutes & TEXCOORD0;
+    bool hasAorm = geometryAttrbutes & AORM;
 
     std::set<std::string> defines;
 
@@ -85,6 +88,7 @@ std::set<std::string> osg2vsg::createPSCDefineStrings(const uint32_t& shaderMode
     if (hastex0 && (shaderModeMask & AMBIENT_MAP)) defines.insert("VSG_AMBIENT_MAP");
     if (hastex0 && (shaderModeMask & NORMAL_MAP)) defines.insert("VSG_NORMAL_MAP");
     if (hastex0 && (shaderModeMask & SPECULAR_MAP)) defines.insert("VSG_SPECULAR_MAP");
+    if (hastex0 && (shaderModeMask & AORM_MAP)) defines.insert("VSG_AORM_MAP");
 
     if (shaderModeMask & BILLBOARD) defines.insert("VSG_BILLBOARD");
 

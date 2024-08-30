@@ -170,6 +170,7 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
     if (shaderModeMask & ShaderModeMask::AMBIENT_MAP) addTexture(AMBIENT_TEXTURE_UNIT);
     if (shaderModeMask & ShaderModeMask::NORMAL_MAP) addTexture(NORMAL_TEXTURE_UNIT);
     if (shaderModeMask & ShaderModeMask::SPECULAR_MAP) addTexture(SPECULAR_TEXTURE_UNIT);
+    if (shaderModeMask & ShaderModeMask::AORM_MAP) addTexture(AORM_TEXTURE_UNIT);
 
     if (descriptors.size() == 0) return vsg::ref_ptr<vsg::DescriptorSet>();
 

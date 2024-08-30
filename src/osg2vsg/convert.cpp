@@ -211,7 +211,7 @@ private:
         
         loadAndSetTexture("_NML.", NORMAL_TEXTURE_UNIT, "norm");
         //loadAndSetTexture("_NML.", 1, "norm");
-        //loadAndSetTexture("_AORM.", 3, "aorm");
+        loadAndSetTexture("_AORM.", AORM_TEXTURE_UNIT, "aorm");
         //loadAndSetTexture("_EMISS.", 7, "emiss");
         //loadAndSetTexture("_HEIGHT.", 9, "height");
     }
